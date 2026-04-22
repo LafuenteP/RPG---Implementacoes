@@ -64,6 +64,29 @@ document.addEventListener("DOMContentLoaded", () => {
     input.classList.add(`blink-${type}`);
   };
 
+  // --- INTEGRAÇÃO COM TERMINAL PC ---
+  const checkCamerasUnlocked = () => {
+    try {
+      const pcNosStr = localStorage.getItem('pcNosRestaurados');
+      if (pcNosStr) {
+        const pcNos = JSON.parse(pcNosStr);
+        if (pcNos[1]) {
+          return true;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
+  };
+
+  // Escutar quando o mestre destravar o Nó 1 em outra aba
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'pcNosRestaurados') {
+      checkCamerasUnlocked();
+    }
+  });
+
   // --- PERSISTÊNCIA DE DADOS COM LOCALSTORAGE ---
   const saveState = () => {
     const state = {
@@ -104,8 +127,10 @@ document.addEventListener("DOMContentLoaded", () => {
       
       atualizarNiveis();
       calcularCustoDiario();
+      checkCamerasUnlocked();
     } else {
       displayDia.textContent = diaAtual;
+      checkCamerasUnlocked();
     }
   };
 
@@ -167,6 +192,24 @@ document.addEventListener("DOMContentLoaded", () => {
     if (coletorNode && coletorNode.classList.contains('unlocked')) {
       psAtuais += 2;
       showToast("Coletor de Chuva", "+2 PS gerados na noite", "success");
+    }
+
+    // Verificar Bônus das Câmeras Ativas (SE DESBLOQUEADO)
+    if (checkCamerasUnlocked()) {
+      let camerasMortas = [];
+      try {
+        camerasMortas = JSON.parse(localStorage.getItem('agent_cameras_mortas')) || [];
+      } catch(e) {}
+      const camerasAtivas = Math.max(0, 4 - camerasMortas.length);
+
+      if (camerasAtivas > 0) {
+        // Exemplo de bônus: 1 PS por câmera ativa. Você pode ajustar a fórmula.
+        const bonusCameras = camerasAtivas * 1; 
+        psAtuais += bonusCameras;
+        showToast("Monitoramento Ativo", `As ${camerasAtivas} câmeras garantiram +${bonusCameras} PS recuperados/poupados!`, "success");
+      } else {
+        showToast("Ponto Cego", "Sem monitoramento! Nenhum bônus recebido.", "error");
+      }
     }
 
     if (psAtuais < custo) {

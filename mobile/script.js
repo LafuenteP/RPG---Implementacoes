@@ -206,8 +206,42 @@ camBtns.forEach(btn => {
   });
 });
 
+const checkCamerasUnlocked = () => {
+  try {
+    const pcNosStr = localStorage.getItem('pcNosRestaurados');
+    if (pcNosStr) {
+      const pcNos = JSON.parse(pcNosStr);
+      return !!pcNos[1];
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  return false;
+};
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'pcNosRestaurados') {
+    location.reload();
+  }
+});
+
 // Inicia no carregamento
 window.addEventListener('load', () => {
+  if (!checkCamerasUnlocked()) {
+    connStatus.innerText = 'OFFLINE';
+    systemStatus.innerHTML = `
+      <i class="fa-solid fa-lock"></i>
+      <h2 style="color: var(--alert-red); text-shadow: var(--alert-glow);">SINAL INACESSÍVEL</h2>
+      <p style="color: var(--alert-red);">Nó de conexão offline. Restaure via Terminal.</p>
+    `;
+    asciiArtContainer.innerText = "\n\n\n\n\n[ ACESSO NEGADO ]\nCONEXÃO COM A TORRE PERDIDA\n";
+    camBtns.forEach(btn => {
+      btn.style.opacity = '0.5';
+      btn.style.pointerEvents = 'none';
+    });
+    return;
+  }
+
   // Verifica se o mestre mandou resetar
   const urlParamsLoad = new URLSearchParams(window.location.search);
   if (urlParamsLoad.has('resetar')) {
