@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terminal de Acesso - Panaceia</title>
+    <style>
+      body {
+        background-color: #050505;
+        color: #33ff00;
+        font-family: "Courier New", Courier, monospace;
+        margin: 0;
+        padding: 30px;
+        overflow-y: auto; /* Permite rolagem natural */
+      }
+
+      #terminal {
+        white-space: pre-wrap;
+        font-size: 18px;
+        text-shadow: 0 0 5px #33ff00;
+        line-height: 1.2;
+      }
+
+      .input-line {
+        display: flex;
+        margin-top: 10px;
+      }
+
+      .prompt {
+        margin-right: 10px;
+        text-shadow: 0 0 5px #33ff00;
+      }
+
+      input {
+        background: transparent;
+        border: none;
+        color: #33ff00;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 18px;
+        outline: none;
+        flex-grow: 1;
+        text-shadow: 0 0 5px #33ff00;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      body::after {
+        content: " ";
+        display: block;
+        position: fixed; /* Fixed para a scanline não bugar na rolagem */
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background:
+          linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+          linear-gradient(
+            90deg,
+            rgba(255, 0, 0, 0.06),
+            rgba(0, 255, 0, 0.02),
+            rgba(0, 0, 255, 0.06)
+          );
+        z-index: 2;
+        background-size:
+          100% 2px,
+          3px 100%;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="terminal"></div>
+    <div id="input-container" class="hidden input-line">
+      <span class="prompt" id="prompt-text">INSERIR_IDENTIFICACAO:~$</span>
+      <input type="text" id="id-input" autocomplete="off" autofocus />
+    </div>
+    <script>
+
+      const terminal = document.getElementById("terminal");
+      const inputContainer = document.getElementById("input-container");
+      const idInput = document.getElementById("id-input");
+      const promptText = document.getElementById("prompt-text");
+
+      let estadoAtual = "LOGIN"; 
+
+      // Armazenamento de estado dos nós
+      let nosRestaurados = JSON.parse(localStorage.getItem('pcNosRestaurados')) || {
+        1: false,
+        2: false,
+        3: false
+      };
+
+      const senhasNos = {
+        1: "ALPHA77",
+        2: "OMEGA22",
+        3: "NEXUS99"
+      };
+
+      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      async function typeText(text, delay = 30) {
+        for (let i = 0; i < text.length; i++) {
+          terminal.innerHTML += text.charAt(i);
+          window.scrollTo(0, document.body.scrollHeight);
+          await sleep(delay);
+        }
+      }
+
+      function printInstant(text) {
+        terminal.innerHTML += text;
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+
+      async function initTerminal() {
+        await typeText("PANACEIA OS v4.2.1 [MODO DE SEGURANÇA MÁXIMA]\n", 20);
+        await sleep(400);
+        await typeText("CARREGANDO MÓDULOS DE CONTENÇÃO... [OK]\n", 20);
+        await sleep(300);
+        await typeText("ESTABELECENDO CONEXÃO COM SERVIDOR CENTRAL... [FALHA]\n", 40);
+        await sleep(500);
+        await typeText("CONECTANDO AO NÓ DE BACKUP LOCAL... [OK]\n\n", 20);
+        await sleep(600);
+        await typeText("AVISO: PROTOCOLO DE QUARENTENA ATIVO.\nACESSO RESTRITO. IDENTIFICAÇÃO NECESSÁRIA.\n\n", 20);
+
+        inputContainer.classList.remove("hidden");
+        idInput.focus();
+      }
+
+      const getAsciiMap = () => `
+=========================================================
+                -                                  0 = SANTUÁRIO
+                \\ \\                                1 = ${nosRestaurados[1] ? '[ TORRE DE OBSERVAÇÃO ]' : '[ SINAL PERDIDO ]'}
+                /    \\                             2 = ${nosRestaurados[2] ? '[ CONTROLE AMBIENTAL ]' : '[ SINAL PERDIDO ]'}
+                 \\    \\                            3 = ${nosRestaurados[3] ? '[ INSTALAÇÃO SECRETA ]' : '[ ZONA MORTA ]'}
+                  \\    \\                               (sem contato)
+                   \\   /                           4 = ASSIMILAÇÃO EM EXPANSÃO
+                    '  \\                           D = ACAMPAMENTO DE PESQUISA
+                     D                            
+                     |   \\                         
+                     |     \\  ||                   
+                     |      | ||                   
+                     |          \\                  
+                    /             \\                
+                    |               \\    ---\\      
+                   /                  -/     |     
+                  -               4        /       
+                /                        /
+            /                           |
+           |                             |    
+            \\ -                     / - -    
+                \\                |           
+                  \\                \\          
+                   \\              3/          
+                    |  2        /             
+                   /          /               
+                  /        /                  
+                  |      /                    
+                  |1   /                      
+                  \\0 /
+
+=========================================================
+${nosRestaurados[1] ? '>>> MÓDULO [CAMERAS] DESBLOQUEADO.\n' : ''}${nosRestaurados[2] ? '>>> MÓDULO [DEFESA] DESBLOQUEADO.\n' : ''}${nosRestaurados[3] ? '>>> MÓDULO [CONFIDENCIAL] DESBLOQUEADO.\n' : ''}AVISO DE SISTEMA: ZONA DE ASSIMILAÇÃO EM EXPANSÃO.
+=========================================================
+`;
+
+      idInput.addEventListener("keypress", async function (e) {
+        if (e.key === "Enter") {
+          const entrada = idInput.value.toUpperCase().trim(); 
+          inputContainer.classList.add("hidden"); 
+
+          // FASE DE LOGIN
+          if (estadoAtual === "LOGIN") {
+            terminal.innerHTML += "INSERIR_IDENTIFICACAO:~$ " + idInput.value + "\n\n";
+
+            await typeText("VALIDANDO CREDENCIAIS NO BANCO DE DADOS LOCAL...\n", 40);
+            await sleep(1500); 
+
+            if (entrada === "") {
+              await typeText("ERRO: ID NÃO FORNECIDO. TENTE NOVAMENTE.\n\n", 30);
+            } else if (entrada !== "7087-6" && entrada !== "ADMIN") {
+              await typeText("ACESSO NEGADO: CREDENCIAIS INVÁLIDAS OU REVOGADAS.\n\n", 30);
+            } else {
+              await typeText("AUTENTICAÇÃO CONFIRMADA. BEM-VINDO, PESQUISADOR.\nQUE O DOADOR NOS PROTEJA.\n\n", 30);
+              await sleep(800);
+              await typeText("GERANDO TOPOLOGIA DA ÁREA...\n", 40);
+              await sleep(1000);
+              
+              await typeText(getAsciiMap(), 2);
+              await sleep(500);
+              await typeText("\n>> (APERTE UM NÚMERO OU COMANDO PARA MAIS INFORMAÇÕES) <<\n\n", 20);
+              
+              estadoAtual = "MAPA"; 
+              promptText.innerText = "SELECIONAR_LOCAL:~$"; 
+            }
+            
+            inputContainer.classList.remove("hidden");
+            idInput.value = "";
+            idInput.focus();
+            window.scrollTo(0, document.body.scrollHeight);
+          } 
+          
+          // FASE DE NAVEGAÇÃO
+          else if (estadoAtual === "MAPA") {
+            
+            terminal.innerHTML += "SELECIONAR_LOCAL:~$ " + entrada + "\n\n";
+
+            // Comandos Especiais
+            if (entrada === "MAPA") {
+              printInstant(getAsciiMap()); 
+              printInstant("\n>> (APERTE UM NÚMERO OU DIGITE UM COMANDO PARA MAIS INFORMAÇÕES) <<\n\n");
+            } 
+            else if (entrada === "CLEAR" || entrada === "CLS") {
+              terminal.innerHTML = ""; 
+            }
+            else if (entrada.startsWith("RESTAURAR")) {
+              const partes = entrada.split(" ");
+              if (partes.length === 3) {
+                const no = parseInt(partes[1]);
+                const senha = partes[2];
+                if ([1, 2, 3].includes(no)) {
+                  if (nosRestaurados[no]) {
+                    await typeText(`ERRO: NÓ ${no} JÁ ESTÁ OPERACIONAL.\n\n`, 10);
+                  } else if (senhasNos[no] === senha) {
+                    await typeText(`VERIFICANDO SENHA PARA O NÓ ${no}... `, 30);
+                    await sleep(1000);
+                    await typeText(`[OK]\n`, 20);
+                    await typeText(`ESTABELECENDO CONEXÃO... `, 30);
+                    await sleep(800);
+                    await typeText(`[SINAL RECUPERADO]\n`, 20);
+                    
+                    nosRestaurados[no] = true;
+                    localStorage.setItem('pcNosRestaurados', JSON.stringify(nosRestaurados));
+                    
+                    if (no === 1) await typeText(`\n>>> NOVO MÓDULO DETECTADO: [CAMERAS]\n>>> ACESSO ÀS CÂMERAS DA ILHA LIBERADO.\n\n`, 20);
+                    if (no === 2) await typeText(`\n>>> NOVO MÓDULO DETECTADO: [DEFESA]\n>>> SISTEMA DE CONTROLE AMBIENTAL LIBERADO.\n\n`, 20);
+                    if (no === 3) await typeText(`\n>>> NOVO MÓDULO DETECTADO: [CONFIDENCIAL]\n>>> ACESSO AOS DADOS SIGILOSOS LIBERADO.\n\n`, 20);
+                  } else {
+                    await typeText(`ACESSO NEGADO: SENHA INCORRETA PARA O NÓ ${no}.\n\n`, 10);
+                  }
+                } else {
+                  await typeText("ERRO: NÓ NÃO ENCONTRADO.\n\n", 10);
+                }
+              } else {
+                await typeText("SINTAXE INVÁLIDA. USE: RESTAURAR [NÓ] [SENHA]\n\n", 10);
+              }
+            }
+            // Módulos Desbloqueáveis
+            else if (entrada === "CAMERAS") {
+              if (nosRestaurados[1]) {
+                await typeText("INICIANDO SISTEMA DE MONITORAMENTO DA ILHA...\n", 20);
+                await sleep(500);
+                await typeText("CAM_01: ACAMPAMENTO BASE (Sinal Limpo. Vento forte. Nenhuma ameaça visível.)\n", 10);
+                await typeText("CAM_02: PRAIA NORTE (Bruma densa. Silhuetas de tamanho médio próximas à água.)\n", 10);
+                await typeText("CAM_03: FLORESTA DENSA (Câmera danificada. Áudio: Ruídos de galhos quebrando pesadamente.)\n", 10);
+                await typeText("CAM_04: RUÍNAS DA VILA (Sinal Intermitente. Algo com múltiplos membros rasteja perto da estátua.)\n\n", 10);
+              } else {
+                await typeText("ERRO: COMANDO DESCONHECIDO OU BLOQUEADO.\n\n", 10);
+              }
+            }
+            else if (entrada === "DEFESA") {
+              if (nosRestaurados[2]) {
+                await typeText("SISTEMA DE CONTROLE AMBIENTAL DA ILHA\n", 15);
+                await typeText("OPÇÕES DISPONÍVEIS:\n", 10);
+                await typeText("1. ATIVAR SIRENES NO ACAMPAMENTO D\n", 10);
+                await typeText("2. DISPARAR LUZES DE ALERTA NA PRAIA\n", 10);
+                await typeText("> USO: DIGITE 'DEFESA 1' OU 'DEFESA 2'\n\n", 10);
+              } else {
+                await typeText("ERRO: COMANDO DESCONHECIDO OU BLOQUEADO.\n\n", 10);
+              }
+            }
+            else if (entrada.startsWith("DEFESA ")) {
+              if (nosRestaurados[2]) {
+                if (entrada === "DEFESA 1") await typeText("SIRENES ATIVADAS NO ACAMPAMENTO D. Atraindo vida hostil para a base da colina...\n\n", 20);
+                else if (entrada === "DEFESA 2") await typeText("LUZES ESTROBOSCÓPICAS DISPARADAS. Movimentação intensa detectada fugindo da Praia Norte.\n\n", 20);
+                else await typeText("ERRO: PARÂMETRO DESCONHECIDO.\n\n", 10);
+              } else {
+                await typeText("ERRO: COMANDO DESCONHECIDO OU BLOQUEADO.\n\n", 10);
+              }
+            }
+            else if (entrada === "CONFIDENCIAL") {
+              if (nosRestaurados[3]) {
+                await typeText("DECRIPTANDO ARQUIVOS DA DIRETORIA...\n", 30);
+                await sleep(1000);
+                await typeText("[ARQ_01 - A ASSIMILAÇÃO]\n", 10);
+                await typeText("A praga da ilha não mata, ela reconfigura. As cobaias preservam o medo, e os sons que emitem são iscas. Fraqueza primária: O tecido radicular entra em necrose se exposto a Cloreto de Prata puro.\n\n", 15);
+                await typeText("[ARQ_02 - SENHA DO COFRE DO SANTUÁRIO]\n", 10);
+                await typeText("Protocolo Omega-Clearance: 08-DELTA-4.\n\n", 15);
+              } else {
+                await typeText("ERRO: COMANDO DESCONHECIDO OU BLOQUEADO.\n\n", 10);
+              }
+            }
+            // Leitura de Nós
+            else {
+              await typeText("ACESSANDO BANCO DE DADOS...\n", 10);
+              await sleep(400);
+
+              if (entrada === "0") {
+                await typeText("[ ARQUIVO: SANTUÁRIO ]\nSTATUS: Operacional / Contenção Nível 4\nPOPULAÇÃO: 11 Funcionários\nNOTA: Defesas ativas. Protocolo de racionamento iniciado.\n\n", 10);
+              } 
+              else if (entrada === "1") {
+                if (nosRestaurados[1]) {
+                  await typeText("[ ARQUIVO: TORRE DE OBSERVAÇÃO ]\nSTATUS: ONLINE\nNOTA: Sistema de câmeras da ilha ativo. Digite o comando CAMERAS para acessar as imagens.\n\n", 10);
+                } else {
+                  await typeText("ERRO 404: SINAL PERDIDO.\nConexão com a torre leste falhou.\n\n", 10);
+                }
+              }
+              else if (entrada === "2") {
+                if (nosRestaurados[2]) {
+                  await typeText("[ ARQUIVO: CONTROLE AMBIENTAL ]\nSTATUS: ONLINE\nNOTA: Rede de alarmes e controle ambiental da ilha religada. Digite o comando DEFESA para interagir.\n\n", 10);
+                } else {
+                  await typeText("ERRO 404: SINAL PERDIDO.\nConexão com a central de força falhou.\n\n", 10);
+                }
+              }
+              else if (entrada === "3") {
+                if (nosRestaurados[3]) {
+                  await typeText("[ ARQUIVO: INSTALAÇÃO SECRETA ]\nSTATUS: ISOLAMENTO TOTAL\nNOTA: Acesso restrito ao banco de dados liberado. Digite o comando CONFIDENCIAL.\n\n", 10);
+                } else {
+                  await typeText("[ ARQUIVO: ZONA MORTA ]\nSTATUS: Desconhecido\nNOTA: Sensores inativos. Duas equipes de resgate enviadas; nenhuma retornou.\n\n", 10);
+                }
+              }
+              else if (entrada === "4") {
+                await typeText("[ ARQUIVO: ASSIMILAÇÃO EM EXPANSÃO ]\nSTATUS: CRÍTICO - Risco Biológico Nível 5\nNOTA: Crescimento exponencial das raízes na ilha. Bombardeio pendente.\n\n", 10);
+              } 
+              else if (entrada === "D") {
+                await typeText("[ ARQUIVO: ACAMPAMENTO DE PESQUISA ]\nSTATUS: Isolado\nNOTA: Local de origem do evento. Contenção falha.\n\n", 10);
+              } 
+              else {
+                await typeText("ERRO: COMANDO OU CÓDIGO INVÁLIDO.\n\n", 10);
+              }
+            }
+
+            // Devolve o controle
+            inputContainer.classList.remove("hidden");
+            idInput.value = "";
+            idInput.focus();
+            window.scrollTo(0, document.body.scrollHeight);
+          }
+        }
+      });
+
+      document.body.addEventListener("click", () => {
+        if (!inputContainer.classList.contains("hidden")) {
+          idInput.focus();
+        }
+      });
+
+      initTerminal();
+    </script>
+  </body>
+</html>

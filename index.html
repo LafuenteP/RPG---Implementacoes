@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SISTEMA.SOBREVIVENCIA.OS</title>
+    <!-- Fontes do Google (Retro Terminal) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Efeito Olho de Peixe e Tela CRT -->
+    <div class="crt-curve"></div>
+    <div class="scanlines"></div>
+    <div class="crt-flicker"></div>
+
+    <!-- Audios -->
+    <audio id="audio-typing" src="Keyboard, typing sound effect - Neve Admoni (youtube).mp3" preload="auto"></audio>
+    <audio id="audio-beep" src="Short Beep - Sound Effect - WhiteFox (youtube).mp3" preload="auto"></audio>
+
+    <div class="app-container">
+      <header class="top-bar">
+        <div class="logo">
+          <i class="ph ph-terminal"></i>
+          <h1>[SISTEMA.SOBREVIVENCIA.OS]</h1>
+        </div>
+        <div class="dia-display">
+          <span>CONTAGEM_DIAS</span>
+          <strong id="display-dia">1</strong>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <!-- Coluna Esquerda: Suprimentos e Ações -->
+        <div class="coluna-esq">
+          
+          <section id="suprimentos" class="card">
+            <h2>> ROOT/SUPRIMENTOS.EXE_</h2>
+            <div class="ps-stats">
+              <div class="stat-box">
+                <span class="stat-label">PS_ATUAIS</span>
+                <input type="number" id="ps-atuais" value="10" min="0" />
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">UNIDADES(SOBREV)</span>
+                <input type="number" id="num-sobreviventes" value="4" min="1" />
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">CUSTO_DIARIO</span>
+                <strong class="stat-value text-danger" id="custo-calculado">2</strong>
+              </div>
+            </div>
+
+            <div class="regras">
+              <p>> ALERTA: PS INSUFICIENTE CAUSA OVERRIDE PARA O STATUS <span class="highlight-error">FADIGA</span>.</p>
+            </div>
+
+            <div class="acoes-ps">
+              <button class="btn" id="btn-add-ps">[+] ADD_PS</button>
+              <button class="btn" id="btn-rem-ps">[-] REM_PS</button>
+              <button class="btn btn-primary" id="btn-avancar-dia">
+                > RUN PROXIMO_DIA.BAT
+              </button>
+            </div>
+          </section>
+
+          <section id="acoes" class="card">
+            <h2>> ROOT/ACOES.LST_</h2>
+            <p class="subtitle">// MÁX 1 AÇÃO/TURNO</p>
+            <ul class="lista-acoes">
+              <li>
+                <div class="acao-icon"><i class="ph ph-magnifying-glass"></i></div>
+                <div class="acao-texto">
+                  <strong>[1] EXPEDICAO_COLETA</strong>
+                  <span>TESTE: SOBREV/PERC. SUCESSO: +1d4+1 PS. FALHA: -1d4 PV.</span>
+                </div>
+              </li>
+              <li>
+                <div class="acao-icon"><i class="ph ph-hammer"></i></div>
+                <div class="acao-texto">
+                  <strong>[2] TRABALHO_BRACAL</strong>
+                  <span>GASTA 1 AÇÃO PARA DESBLOQUEAR NÓ NA ÁRVORE TEC.</span>
+                </div>
+              </li>
+              <li>
+                <div class="acao-icon"><i class="ph ph-bandaids"></i></div>
+                <div class="acao-texto">
+                  <strong>[3] ATENDIMENTO_MEDICO</strong>
+                  <span>TESTE: MEDICINA. +1d8+1 PV OU REMOVE COND.</span>
+                </div>
+              </li>
+              <li>
+                <div class="acao-icon"><i class="ph ph-brain"></i></div>
+                <div class="acao-texto">
+                  <strong>[4] APOIO_PSICOLOGICO</strong>
+                  <span>TESTE: DIPL/ARTES. +1d6 SANIDADE.</span>
+                </div>
+              </li>
+              <li>
+                <div class="acao-icon"><i class="ph ph-shield-check"></i></div>
+                <div class="acao-texto">
+                  <strong>[5] PATRULHA_PERIMETRO</strong>
+                  <span>TESTE: FURT/TATICA. ANULA ENCONTRO NOTURNO.</span>
+                </div>
+              </li>
+            </ul>
+          </section>
+
+        </div>
+
+        <!-- Coluna Direita: Melhorias -->
+        <div class="coluna-dir">
+          <section id="melhorias" class="card tree-card">
+            <h2>> ROOT/ARVORE_TEC.SYS_</h2>
+            <p class="subtitle">// PROTOCOLOS DE MELHORIA</p>
+            
+            <div class="arvore-container">
+              <!-- Nível Base -->
+              <div class="nivel-arvore">
+                <div class="melhoria-item node" data-melhoria="abrigo">
+                  <div class="node-content">
+                    <i class="ph ph-tent"></i>
+                    <label>ACAMP_BASE.exe</label>
+                  </div>
+                  <div class="melhoria-info">
+                    <span class="custo">REQ: 2 AÇÕES + 2 PS</span>
+                    <span class="efeito">LIBERA O LVL 1</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nível 1 -->
+              <div class="nivel-arvore locked" id="nivel-1">
+                <div class="melhoria-item node" data-melhoria="fogueira">
+                  <div class="node-content">
+                    <i class="ph ph-campfire"></i>
+                    <label>FOGO_ESTAVEL.sys</label>
+                  </div>
+                  <div class="melhoria-info">
+                    <span class="custo">REQ: 1 AÇÃO</span>
+                    <span class="efeito">PSICO: +1d8+2 SAN</span>
+                  </div>
+                </div>
+                <div class="melhoria-item node" data-melhoria="coletor">
+                  <div class="node-content">
+                    <i class="ph ph-drop"></i>
+                    <label>COLETOR_CHUVA.bat</label>
+                  </div>
+                  <div class="melhoria-info">
+                    <span class="custo">REQ: 2 AÇÕES</span>
+                    <span class="efeito">+2 PS / DIA</span>
+                  </div>
+                </div>
+                <div class="melhoria-item node" data-melhoria="triagem">
+                  <div class="node-content">
+                    <i class="ph ph-first-aid"></i>
+                    <label>AREA_TRIAGEM.lib</label>
+                  </div>
+                  <div class="melhoria-info">
+                    <span class="custo">REQ: 1 AÇÃO + 1 PS</span>
+                    <span class="efeito">+5 TESTE MEDIC</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nível 2 -->
+              <div class="nivel-arvore locked" id="nivel-2">
+                <div class="melhoria-item node" data-melhoria="perimetro">
+                  <div class="node-content">
+                    <i class="ph ph-bell-ringing"></i>
+                    <label>ALRM_PERIMETRO.sys</label>
+                  </div>
+                  <div class="melhoria-info">
+                    <span class="custo">REQ: 2 AÇÕES + 1 PS</span>
+                    <span class="efeito">SEM SURP, +2 DEF</span>
+                  </div>
+                </div>
+                <div class="melhoria-item node" data-melhoria="cartografia">
+                  <div class="node-content">
+                    <i class="ph ph-map-trifold"></i>
+                    <label>MESA_MAPAS.dat</label>
+                  </div>
+                  <div class="melhoria-info">
+                    <span class="custo">REQ: 2 AÇÕES</span>
+                    <span class="efeito">+5 TESTE INVES</span>
+                  </div>
+                </div>
+                <div class="melhoria-item node" data-melhoria="destilador">
+                  <div class="node-content">
+                    <i class="ph ph-flask"></i>
+                    <label>DESTILADOR_PRN.exe</label>
+                  </div>
+                  <div class="melhoria-info">
+                    <span class="custo">REQ: 3 AÇÕES + 2 PS</span>
+                    <span class="efeito">CRIA 'SEIVA DE VIDA'</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer>
+        <p>> SYS_SHUTDOWN // BOA_SORTE_USUARIO_</p>
+      </footer>
+    </div>
+
+    <!-- Container de Toasts -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>A.G.E.N.T. - Mobile Uplink</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../style.css"> <!-- Importa estilo base (CRTs, cores) -->
+  <link rel="stylesheet" href="style.css"> <!-- Estilos específicos do mobile -->
+</head>
+<body>
+  <!-- Efeitos CRT globais -->
+  <div class="scanlines"></div>
+  <div class="crt-flicker"></div>
+
+  <div class="mobile-container">
+    <header class="mobile-header">
+      <div class="logo">
+        <i class="fa-solid fa-satellite-dish"></i>
+        <h1>UPLINK_</h1>
+      </div>
+      <div class="status-indicator">
+        <span class="dot"></span>
+        <span id="conn-status">ONLINE</span>
+      </div>
+    </header>
+
+    <main class="mobile-main">
+      <div class="camera-feed">
+        <div class="feed-overlay">
+          <span class="rec-icon">● REC</span>
+          <span class="cam-id" id="cam-id">CAM_01 - ACAMPAMENTO</span>
+        </div>
+        <div class="feed-static"></div>
+        
+        <div class="ascii-art-container" id="ascii-art">
+          <!-- Arte ASCII injetada pelo JS -->
+        </div>
+
+        <div class="system-status" id="system-status">
+          <i class="fa-solid fa-shield-halved"></i>
+          <h2>SISTEMA ESTÁVEL</h2>
+          <p>Nenhuma anomalia detectada.</p>
+        </div>
+      </div>
+
+      <div class="camera-controls">
+        <button class="cam-btn active" data-cam="1">CAM 01</button>
+        <button class="cam-btn" data-cam="2">CAM 02</button>
+        <button class="cam-btn" data-cam="3">CAM 03</button>
+        <button class="cam-btn" data-cam="4">CAM 04</button>
+      </div>
+
+      <div class="action-area" id="action-area">
+        <!-- Botão aparece apenas durante o evento na câmera certa -->
+        <button id="btn-purgar" class="btn btn-purge hidden">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          DESASSIMILAR SETOR
+        </button>
+      </div>
+      
+      <!-- Mensagem de falha -->
+      <div id="failure-screen" class="failure-screen hidden">
+        <i class="fa-solid fa-skull"></i>
+        <h2>ASSIMILAÇÃO CONCLUÍDA</h2>
+        <p>Sinal perdido.</p>
+      </div>
+
+    </main>
+    
+    <footer class="mobile-footer">
+      <p>AGÊNCIA_OS</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
