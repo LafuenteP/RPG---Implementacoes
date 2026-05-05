@@ -1,6 +1,6 @@
 const supabaseUrl = 'https://yedmpjcllgnluyrbletf.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllZG1wamNsbGdubHV5cmJpZXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODYxMjksImV4cCI6MjA5MzU2MjEyOX0.EigaV6Q-2RJUS0zbSCu-A88ZW6f3Qg5LR5n5Tgu_2Bg';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 let pcNosGlobais = { 1: false, 2: false, 3: false };
 let agentCamerasMortasGlobal = [];
@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     try {
-      await supabase.from('game_state').update({ rpg_survival_state: state }).eq('id', 1);
+      await supabaseClient.from('game_state').update({ rpg_survival_state: state }).eq('id', 1);
     } catch (e) {
       console.error("Erro ao salvar no Supabase:", e);
     }
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const loadState = async () => {
     try {
-      const { data, error } = await supabase.from('game_state').select('*').eq('id', 1).single();
+      const { data, error } = await supabaseClient.from('game_state').select('*').eq('id', 1).single();
       
       if (data) {
         if (data.rpg_survival_state) {
@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Escutar mudanças do Supabase em tempo real
-  supabase
+  supabaseClient
     .channel('game_state_changes_master')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' }, payload => {
       const newData = payload.new;

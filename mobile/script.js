@@ -1,6 +1,6 @@
 const supabaseUrl = 'https://yedmpjcllgnluyrbletf.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllZG1wamNsbGdubHV5cmJpZXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODYxMjksImV4cCI6MjA5MzU2MjEyOX0.EigaV6Q-2RJUS0zbSCu-A88ZW6f3Qg5LR5n5Tgu_2Bg';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // Seletores
 const systemStatus = document.getElementById('system-status');
@@ -160,7 +160,7 @@ function falharAssimilacao() {
     camerasMortas.push(camAssimilada);
     // Salva no armazenamento no Supabase
     try {
-      supabase.from('game_state').update({ agent_cameras_mortas: camerasMortas }).eq('id', 1).then();
+      supabaseClient.from('game_state').update({ agent_cameras_mortas: camerasMortas }).eq('id', 1).then();
     } catch(e) {
       console.error(e);
     }
@@ -222,7 +222,7 @@ const checkCamerasUnlocked = () => {
 // Inicia no carregamento
 window.addEventListener('load', async () => {
   try {
-    const { data, error } = await supabase.from('game_state').select('*').eq('id', 1).single();
+    const { data, error } = await supabaseClient.from('game_state').select('*').eq('id', 1).single();
     if (data) {
       if (data.agent_cameras_mortas) {
         camerasMortas = data.agent_cameras_mortas || [];
@@ -240,7 +240,7 @@ window.addEventListener('load', async () => {
   if (urlParamsLoad.has('resetar')) {
     camerasMortas = [];
     try {
-      await supabase.from('game_state').update({ agent_cameras_mortas: [] }).eq('id', 1);
+      await supabaseClient.from('game_state').update({ agent_cameras_mortas: [] }).eq('id', 1);
     } catch(e) {
       console.error(e);
     }
@@ -250,7 +250,7 @@ window.addEventListener('load', async () => {
   }
 
   // Inscreve para ouvir mudanças
-  supabase
+  supabaseClient
     .channel('game_state_changes_mobile')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' }, payload => {
       const newData = payload.new;
