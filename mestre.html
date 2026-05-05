@@ -127,6 +127,24 @@
       </header>
 
       <main class="mestre-dashboard">
+        <!-- Controle de Tempo do Sistema -->
+        <section class="card" style="border-color: #00bcd4; margin-bottom: 20px;">
+          <h2 style="color: #00bcd4;">> SYSTEM_CLOCK.EXE_</h2>
+          <p class="subtitle">// CONTROLE GLOBAL DE ASSIMILAÇÃO DAS CÂMERAS</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div>
+              <span style="font-size: 1.2rem;">STATUS: </span>
+              <strong id="timer-status" style="font-size: 1.2rem; color: #ffeb3b;">PAUSADO</strong>
+            </div>
+            <div id="timer-countdown" style="font-size: 1.2rem; font-family: 'Share Tech Mono', monospace; display: none;">
+              --:--
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" id="btn-toggle-timer" style="flex: 2;">▶ INICIAR TEMPO</button>
+          </div>
+        </section>
+
         <div class="panel-grid">
           
           <!-- Controle dos Nós -->

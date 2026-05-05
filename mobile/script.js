@@ -28,20 +28,15 @@ let estadoGlobal = 'normal'; // 'normal' ou 'assimilado'
 let camerasMortas = [];
 let pcNosGlobais = { 1: false };
 
-// Variáveis de tempo
-let timerAssimilacao;
-let timerFalha;
+// Variáveis de tempo do Timer Global (id 2)
+let timerState = {
+  isPaused: true,
+  nextEventTime: 0,
+  timeRemainingForNextEvent: 120000,
+  activeEvent: null 
+};
 
-// Parâmetros para facilitar teste
-const urlParams = new URLSearchParams(window.location.search);
-const modoTeste = urlParams.get('teste') === '1';
-
-// 10 a 40 minutos em ms, ou 10 a 40 segundos se for modo teste
-const minTime = modoTeste ? 10 * 1000 : 10 * 60 * 1000;
-const maxTime = modoTeste ? 40 * 1000 : 40 * 60 * 1000;
-
-// 3 minutos para falhar, ou 5 segundos se for modo teste
-const tempoFalha = modoTeste ? 5 * 1000 : 3 * 60 * 1000;
+let lastRenderState = "";
 
 function renderizarCamera() {
   camIdDisplay.innerText = `CAM_0${cameraAtual} - ${cameras[cameraAtual].nome}`;
@@ -112,97 +107,91 @@ function renderizarCamera() {
   });
 }
 
-function iniciarCiclo() {
-  if (camerasMortas.length >= 4) return; // Fim de jogo
+function tickGlobal() {
+  if (!checkCamerasUnlocked()) return;
+  if (timerState.isPaused) return;
 
-  // Limpa tudo
-  clearTimeout(timerAssimilacao);
-  clearTimeout(timerFalha);
-  
-  estadoGlobal = 'normal';
-  camAssimilada = null;
-  renderizarCamera();
+  const now = Date.now();
 
-  // Calcula proximo evento
-  const proximoEvento = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
-  
-  if (modoTeste) {
-    console.log(`Próximo evento em ${proximoEvento / 1000} segundos.`);
-  }
-
-  // Agenda evento
-  timerAssimilacao = setTimeout(dispararAssimilacao, proximoEvento);
-}
-
-function dispararAssimilacao() {
-  estadoGlobal = 'assimilado';
-  
-  let camerasVivas = [1, 2, 3, 4].filter(c => !camerasMortas.includes(c));
-  if (camerasVivas.length === 0) return;
-
-  camAssimilada = camerasVivas[Math.floor(Math.random() * camerasVivas.length)]; // Sorteia uma camera viva
-  
-  if (modoTeste) {
-    console.log(`Câmera assimilada: ${camAssimilada}`);
-  }
-
-  renderizarCamera(); // Atualiza a tela atual imediatamente
-
-  // Inicia timer para falha (3 minutos)
-  timerFalha = setTimeout(falharAssimilacao, tempoFalha);
-}
-
-function falharAssimilacao() {
-  clearTimeout(timerAssimilacao);
-  
-  // Perde a câmera
-  if (camAssimilada && !camerasMortas.includes(camAssimilada)) {
-    camerasMortas.push(camAssimilada);
-    // Salva no armazenamento no Supabase
-    try {
-      supabaseClient.from('game_state').update({ agent_cameras_mortas: camerasMortas }).eq('id', 1).then();
-    } catch(e) {
-      console.error(e);
-    }
-  }
-  
-  if (camerasMortas.length >= 4) {
-    // Mostra tela de falha global se perder as 4
-    btnPurgar.classList.add('hidden');
-    failureScreen.classList.remove('hidden');
-  } else {
-    // O jogo continua sem essa câmera
+  if (!timerState.activeEvent) {
+    // Estamos esperando um ataque
     estadoGlobal = 'normal';
     camAssimilada = null;
+
+    if (now >= timerState.nextEventTime && timerState.nextEventTime > 0) {
+      // HORA DO ATAQUE!
+      let camerasVivas = [1, 2, 3, 4].filter(c => !camerasMortas.includes(c));
+      if (camerasVivas.length > 0) {
+        const camSorteada = camerasVivas[Math.floor(Math.random() * camerasVivas.length)];
+        
+        timerState.activeEvent = {
+          camId: camSorteada,
+          deadline: now + (3 * 60 * 1000) // 3 minutos
+        };
+        
+        // Salva no banco para todos os celulares pegarem
+        supabaseClient.from('game_state').upsert({ id: 2, rpg_survival_state: timerState }).then();
+      }
+    }
+  } else {
+    // Temos um evento ativo
+    estadoGlobal = 'assimilado';
+    camAssimilada = timerState.activeEvent.camId;
+    
+    if (now >= timerState.activeEvent.deadline) {
+      // CÂMERA MORREU
+      if (!camerasMortas.includes(camAssimilada)) {
+        camerasMortas.push(camAssimilada);
+        supabaseClient.from('game_state').update({ agent_cameras_mortas: camerasMortas }).eq('id', 1).then();
+      }
+      
+      // Prepara próximo ataque
+      timerState.activeEvent = null;
+      const minTime = 10 * 60 * 1000;
+      const maxTime = 40 * 60 * 1000;
+      const delay = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
+      timerState.nextEventTime = now + delay;
+      supabaseClient.from('game_state').upsert({ id: 2, rpg_survival_state: timerState }).then();
+
+      systemStatus.innerHTML = `
+        <i class="fa-solid fa-skull"></i>
+        <h2 style="color: var(--alert-red); text-shadow: var(--alert-glow);">SETOR PERDIDO</h2>
+        <p style="color: var(--alert-red);">A assimilação consumiu o local.</p>
+      `;
+    }
+  }
+
+  // Verifica se a tela precisa ser re-renderizada (evita piscar o texto)
+  const currentRenderState = `${estadoGlobal}-${camAssimilada}-${cameraAtual}-${camerasMortas.join()}`;
+  if (currentRenderState !== lastRenderState) {
     renderizarCamera();
-    
-    // Avisa que perdeu o setor antes de iniciar o próximo ciclo
-    systemStatus.innerHTML = `
-      <i class="fa-solid fa-skull"></i>
-      <h2 style="color: var(--alert-red); text-shadow: var(--alert-glow);">SETOR PERDIDO</h2>
-      <p style="color: var(--alert-red);">A assimilação consumiu o local.</p>
-    `;
-    
-    // Aguarda um pouco e recomeça o ciclo para as câmeras restantes
-    setTimeout(iniciarCiclo, 4000);
+    lastRenderState = currentRenderState;
   }
 }
 
-function purgarSistema() {
-  // Jogador apertou o botão a tempo na câmera certa
-  clearTimeout(timerFalha);
+async function purgarSistema() {
+  if (!timerState.activeEvent) return; // Segurança
   
   btnPurgar.classList.add('hidden');
   systemStatus.innerHTML = `
     <i class="fa-solid fa-check"></i>
     <h2>PURGA CONCLUÍDA</h2>
-    <p>Reiniciando varredura...</p>
+    <p>Reiniciando varredura global...</p>
   `;
   document.body.classList.remove('estado-assimilacao');
   estadoGlobal = 'normal';
   
-  // Aguarda 2 segundos e reinicia o ciclo
-  setTimeout(iniciarCiclo, 2000);
+  // Limpa evento e define novo tempo
+  const minTime = 10 * 60 * 1000;
+  const maxTime = 40 * 60 * 1000;
+  const delay = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
+  
+  timerState.activeEvent = null;
+  timerState.nextEventTime = Date.now() + delay;
+  
+  try {
+    await supabaseClient.from('game_state').upsert({ id: 2, rpg_survival_state: timerState });
+  } catch(e) { console.error(e); }
 }
 
 // Event Listeners
@@ -222,14 +211,19 @@ const checkCamerasUnlocked = () => {
 // Inicia no carregamento
 window.addEventListener('load', async () => {
   try {
-    const { data, error } = await supabaseClient.from('game_state').select('*').eq('id', 1).single();
-    if (data) {
-      if (data.agent_cameras_mortas) {
-        camerasMortas = data.agent_cameras_mortas || [];
+    const { data: data1 } = await supabaseClient.from('game_state').select('*').eq('id', 1).single();
+    if (data1) {
+      if (data1.agent_cameras_mortas) {
+        camerasMortas = data1.agent_cameras_mortas || [];
       }
-      if (data.pc_nos_restaurados) {
-        pcNosGlobais = data.pc_nos_restaurados || { 1: false };
+      if (data1.pc_nos_restaurados) {
+        pcNosGlobais = data1.pc_nos_restaurados || { 1: false };
       }
+    }
+
+    const { data: data2 } = await supabaseClient.from('game_state').select('*').eq('id', 2).single();
+    if (data2 && data2.rpg_survival_state) {
+      timerState = data2.rpg_survival_state;
     }
   } catch(e) {
     console.error(e);
@@ -256,14 +250,12 @@ window.addEventListener('load', async () => {
       const newData = payload.new;
       if (newData.agent_cameras_mortas) {
         camerasMortas = newData.agent_cameras_mortas || [];
-        renderizarCamera();
         if (camerasMortas.length >= 4) {
           btnPurgar.classList.add('hidden');
           failureScreen.classList.remove('hidden');
         } else if (!failureScreen.classList.contains('hidden')) {
            // Resetou e tava na tela de falha
            failureScreen.classList.add('hidden');
-           iniciarCiclo();
         }
       }
       if (newData.pc_nos_restaurados) {
@@ -274,6 +266,11 @@ window.addEventListener('load', async () => {
         } else if (checkAntes && !checkCamerasUnlocked()) {
           location.reload(); // Recarrega se foi bloqueado
         }
+      }
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.2' }, payload => {
+      if (payload.new && payload.new.rpg_survival_state) {
+        timerState = payload.new.rpg_survival_state;
       }
     })
     .subscribe();
@@ -302,20 +299,6 @@ window.addEventListener('load', async () => {
     return;
   }
 
-  iniciarCiclo();
-  
-  if (modoTeste) {
-    // Alerta de teste para não confundir o mestre
-    const toast = document.createElement('div');
-    toast.style.position = 'fixed';
-    toast.style.bottom = '10px';
-    toast.style.left = '10px';
-    toast.style.background = '#33ff00';
-    toast.style.color = '#000';
-    toast.style.padding = '5px 10px';
-    toast.style.zIndex = '9999';
-    toast.style.fontSize = '12px';
-    toast.innerText = 'MODO TESTE ATIVO';
-    document.body.appendChild(toast);
-  }
+  // Inicia o Tick Global a cada 1 segundo
+  setInterval(tickGlobal, 1000);
 });

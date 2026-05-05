@@ -7,6 +7,14 @@ let stateGlobais = {
   camerasMortas: []
 };
 
+// --- ESTADO DO TIMER GLOBAL ---
+let timerState = {
+  isPaused: true,
+  nextEventTime: 0,
+  timeRemainingForNextEvent: 120000, // 2 minutos até o primeiro evento
+  activeEvent: null 
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
   const btnNodes = document.querySelectorAll('[data-node]');
   const btnCams = document.querySelectorAll('[data-cam]');
@@ -67,12 +75,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   const loadData = async () => {
-    const { data } = await supabaseClient.from('game_state').select('*').eq('id', 1).single();
-    if (data) {
-      if (data.pc_nos_restaurados) stateGlobais.pcNos = data.pc_nos_restaurados;
-      if (data.agent_cameras_mortas) stateGlobais.camerasMortas = data.agent_cameras_mortas;
+    // Carrega dados da UI Principal (Nós e Câmeras)
+    const { data: data1 } = await supabaseClient.from('game_state').select('*').eq('id', 1).single();
+    if (data1) {
+      if (data1.pc_nos_restaurados) stateGlobais.pcNos = data1.pc_nos_restaurados;
+      if (data1.agent_cameras_mortas) stateGlobais.camerasMortas = data1.agent_cameras_mortas;
       renderUI();
     }
+
+    // Carrega dados do Timer Global (id 2)
+    const { data: data2 } = await supabaseClient.from('game_state').select('*').eq('id', 2).single();
+    if (data2 && data2.rpg_survival_state) {
+      timerState = data2.rpg_survival_state;
+    } else {
+      // Se não existir, tenta criar a linha com upsert
+      await supabaseClient.from('game_state').upsert({ id: 2, rpg_survival_state: timerState });
+    }
+    updateTimerUI();
   };
 
   const updateNos = async () => {
@@ -111,7 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   btnReset.addEventListener('click', async () => {
-    if (confirm("ATENÇÃO: Isso vai resetar todas as câmeras para ONLINE e bloquear todos os Nós do PC. Continuar?")) {
+    if (confirm("ATENÇÃO: Isso vai resetar todas as câmeras para ONLINE e bloquear todos os Nós do PC. O timer também será reiniciado. Continuar?")) {
       stateGlobais.pcNos = { 1: false, 2: false, 3: false };
       stateGlobais.camerasMortas = [];
       renderUI();
@@ -119,11 +138,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         pc_nos_restaurados: stateGlobais.pcNos,
         agent_cameras_mortas: stateGlobais.camerasMortas
       }).eq('id', 1);
+
+      // Reseta Timer
+      timerState = {
+        isPaused: true,
+        nextEventTime: 0,
+        timeRemainingForNextEvent: 120000,
+        activeEvent: null 
+      };
+      await supabaseClient.from('game_state').upsert({ id: 2, rpg_survival_state: timerState });
+      updateTimerUI();
+
       showToast('RESET COMPLETO', 'Campanha reiniciada com sucesso.');
     }
   });
 
-  // Realtime Sync
+  // Realtime Sync para id=1
   supabaseClient
     .channel('game_state_changes_mestre')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' }, payload => {
@@ -139,7 +169,93 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       if (changed) renderUI();
     })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.2' }, payload => {
+      if (payload.new && payload.new.rpg_survival_state) {
+        timerState = payload.new.rpg_survival_state;
+        updateTimerUI();
+      }
+    })
     .subscribe();
+
+  // --- LÓGICA DO TIMER GLOBAL ---
+  const btnToggleTimer = document.getElementById('btn-toggle-timer');
+  const timerStatus = document.getElementById('timer-status');
+  const timerCountdown = document.getElementById('timer-countdown');
+
+  const saveTimerState = async () => {
+    await supabaseClient.from('game_state').upsert({ id: 2, rpg_survival_state: timerState });
+  };
+
+  const updateTimerUI = () => {
+    if (timerState.isPaused) {
+      timerStatus.innerText = "PAUSADO";
+      timerStatus.style.color = "#ffeb3b";
+      btnToggleTimer.innerHTML = "▶ INICIAR TEMPO";
+      btnToggleTimer.className = "btn btn-primary";
+      timerCountdown.style.display = "none";
+    } else {
+      timerStatus.innerText = "RODANDO";
+      timerStatus.style.color = "#33ff00";
+      btnToggleTimer.innerHTML = "⏸ PAUSAR TEMPO";
+      btnToggleTimer.className = "btn btn-danger";
+      timerCountdown.style.display = "block";
+    }
+  };
+
+  btnToggleTimer.addEventListener('click', async () => {
+    if (timerState.isPaused) {
+      // INICIAR
+      timerState.isPaused = false;
+      if (timerState.activeEvent) {
+        timerState.activeEvent.deadline = Date.now() + timerState.activeEvent.timeRemainingForAssimilation;
+      } else {
+        timerState.nextEventTime = Date.now() + timerState.timeRemainingForNextEvent;
+      }
+    } else {
+      // PAUSAR
+      timerState.isPaused = true;
+      if (timerState.activeEvent) {
+        timerState.activeEvent.timeRemainingForAssimilation = Math.max(0, timerState.activeEvent.deadline - Date.now());
+      } else {
+        timerState.timeRemainingForNextEvent = Math.max(0, timerState.nextEventTime - Date.now());
+      }
+    }
+    updateTimerUI();
+    await saveTimerState();
+  });
+
+  const btnForceEvent = document.getElementById('btn-force-event');
+  btnForceEvent.addEventListener('click', async () => {
+    if (timerState.isPaused) {
+      alert("Inicie o tempo primeiro!");
+      return;
+    }
+    if (timerState.activeEvent) {
+      alert("Já existe uma assimilação em andamento!");
+      return;
+    }
+    // Força o nextEventTime para AGORA
+    timerState.nextEventTime = Date.now();
+    await saveTimerState();
+    showToast('EVENTO FORÇADO', 'A assimilação vai começar no próximo segundo.');
+  });
+
+  // Loop visual a cada 1 segundo (só para atualizar a contagem no painel do mestre)
+  setInterval(() => {
+    if (timerState.isPaused) return;
+
+    if (timerState.activeEvent) {
+      const remaining = Math.max(0, timerState.activeEvent.deadline - Date.now());
+      timerCountdown.innerText = `ASSIMILANDO... ${Math.ceil(remaining/1000)}s`;
+      timerCountdown.style.color = "#ff3333";
+    } else {
+      const remaining = Math.max(0, timerState.nextEventTime - Date.now());
+      const min = Math.floor(remaining / 60000);
+      const sec = Math.floor((remaining % 60000) / 1000);
+      timerCountdown.innerText = `PRÓX. ATAQUE EM: ${min}:${sec < 10 ? '0' : ''}${sec}`;
+      timerCountdown.style.color = "#33ff00";
+    }
+  }, 1000);
 
   // --- EVENTOS E GERADORES ---
 
