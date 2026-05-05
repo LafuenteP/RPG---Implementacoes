@@ -1,3 +1,10 @@
+const supabaseUrl = 'https://yedmpjcllgnluyrbletf.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllZG1wamNsbGdubHV5cmJpZXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODYxMjksImV4cCI6MjA5MzU2MjEyOX0.EigaV6Q-2RJUS0zbSCu-A88ZW6f3Qg5LR5n5Tgu_2Bg';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+let pcNosGlobais = { 1: false, 2: false, 3: false };
+let agentCamerasMortasGlobal = [];
+
 document.addEventListener("DOMContentLoaded", () => {
   const psAtuaisInput = document.getElementById("ps-atuais");
   const numSobreviventesInput = document.getElementById("num-sobreviventes");
@@ -66,29 +73,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- INTEGRAÇÃO COM TERMINAL PC ---
   const checkCamerasUnlocked = () => {
-    try {
-      const pcNosStr = localStorage.getItem('pcNosRestaurados');
-      if (pcNosStr) {
-        const pcNos = JSON.parse(pcNosStr);
-        if (pcNos[1]) {
-          return true;
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return false;
+    return !!pcNosGlobais[1];
   };
 
-  // Escutar quando o mestre destravar o Nó 1 em outra aba
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'pcNosRestaurados') {
-      checkCamerasUnlocked();
-    }
-  });
-
-  // --- PERSISTÊNCIA DE DADOS COM LOCALSTORAGE ---
-  const saveState = () => {
+  // --- PERSISTÊNCIA DE DADOS COM SUPABASE ---
+  const saveState = async () => {
     const state = {
       psAtuais: psAtuaisInput.value,
       numSobreviventes: numSobreviventesInput.value,
@@ -101,38 +90,92 @@ document.addEventListener("DOMContentLoaded", () => {
       state.melhorias[id] = node.classList.contains("unlocked");
     });
 
-    localStorage.setItem("rpgSurvivalState", JSON.stringify(state));
+    try {
+      await supabase.from('game_state').update({ rpg_survival_state: state }).eq('id', 1);
+    } catch (e) {
+      console.error("Erro ao salvar no Supabase:", e);
+    }
   };
 
-  const loadState = () => {
-    const savedState = localStorage.getItem("rpgSurvivalState");
-    if (savedState) {
-      const state = JSON.parse(savedState);
-      psAtuaisInput.value = state.psAtuais || 0;
-      numSobreviventesInput.value = state.numSobreviventes || 2;
-      diaAtual = state.dia || 1;
-      displayDia.textContent = diaAtual;
+  const loadState = async () => {
+    try {
+      const { data, error } = await supabase.from('game_state').select('*').eq('id', 1).single();
+      
+      if (data) {
+        if (data.rpg_survival_state) {
+          const state = data.rpg_survival_state;
+          psAtuaisInput.value = state.psAtuais || 0;
+          numSobreviventesInput.value = state.numSobreviventes || 2;
+          diaAtual = state.dia || 1;
+          displayDia.textContent = diaAtual;
 
-      // Carregar melhorias
-      if (state.melhorias) {
-        nodesMelhoria.forEach(node => {
-          const id = node.dataset.melhoria;
-          if (state.melhorias[id]) {
-            node.classList.add("unlocked");
-          } else {
-            node.classList.remove("unlocked");
+          if (state.melhorias) {
+            nodesMelhoria.forEach(node => {
+              const id = node.dataset.melhoria;
+              if (state.melhorias[id]) {
+                node.classList.add("unlocked");
+              } else {
+                node.classList.remove("unlocked");
+              }
+            });
           }
-        });
+        }
+        
+        if (data.pc_nos_restaurados) {
+          pcNosGlobais = data.pc_nos_restaurados;
+        }
+
+        if (data.agent_cameras_mortas) {
+          agentCamerasMortasGlobal = data.agent_cameras_mortas || [];
+        }
       }
       
       atualizarNiveis();
       calcularCustoDiario();
       checkCamerasUnlocked();
-    } else {
+    } catch(e) {
+      console.error(e);
       displayDia.textContent = diaAtual;
       checkCamerasUnlocked();
     }
   };
+
+  // Escutar mudanças do Supabase em tempo real
+  supabase
+    .channel('game_state_changes_master')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' }, payload => {
+      const newData = payload.new;
+      if (newData.rpg_survival_state) {
+        const state = newData.rpg_survival_state;
+        psAtuaisInput.value = state.psAtuais || 0;
+        numSobreviventesInput.value = state.numSobreviventes || 2;
+        diaAtual = state.dia || 1;
+        displayDia.textContent = diaAtual;
+
+        if (state.melhorias) {
+          nodesMelhoria.forEach(node => {
+            const id = node.dataset.melhoria;
+            if (state.melhorias[id]) {
+              node.classList.add("unlocked");
+            } else {
+              node.classList.remove("unlocked");
+            }
+          });
+        }
+        atualizarNiveis();
+        calcularCustoDiario();
+      }
+
+      if (newData.pc_nos_restaurados) {
+        pcNosGlobais = newData.pc_nos_restaurados;
+        checkCamerasUnlocked();
+      }
+
+      if (newData.agent_cameras_mortas) {
+        agentCamerasMortasGlobal = newData.agent_cameras_mortas || [];
+      }
+    })
+    .subscribe();
 
   // --- CÁLCULO DE CUSTO DE PS ---
   const calcularCustoDiario = () => {
@@ -196,11 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Verificar Bônus das Câmeras Ativas (SE DESBLOQUEADO)
     if (checkCamerasUnlocked()) {
-      let camerasMortas = [];
-      try {
-        camerasMortas = JSON.parse(localStorage.getItem('agent_cameras_mortas')) || [];
-      } catch(e) {}
-      const camerasAtivas = Math.max(0, 4 - camerasMortas.length);
+      const camerasAtivas = Math.max(0, 4 - agentCamerasMortasGlobal.length);
 
       if (camerasAtivas > 0) {
         // Exemplo de bônus: 1 PS por câmera ativa. Você pode ajustar a fórmula.

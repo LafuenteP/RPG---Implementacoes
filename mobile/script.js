@@ -1,3 +1,7 @@
+const supabaseUrl = 'https://yedmpjcllgnluyrbletf.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllZG1wamNsbGdubHV5cmJpZXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODYxMjksImV4cCI6MjA5MzU2MjEyOX0.EigaV6Q-2RJUS0zbSCu-A88ZW6f3Qg5LR5n5Tgu_2Bg';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
 // Seletores
 const systemStatus = document.getElementById('system-status');
 const actionArea = document.getElementById('action-area');
@@ -20,8 +24,9 @@ let cameraAtual = 1;
 let camAssimilada = null; // null = tudo normal. 1 a 4 = câmera afetada
 let estadoGlobal = 'normal'; // 'normal' ou 'assimilado'
 
-// Carrega as câmeras mortas do armazenamento local do navegador
-let camerasMortas = JSON.parse(localStorage.getItem('agent_cameras_mortas')) || [];
+// Câmeras mortas do estado global e status dos nós
+let camerasMortas = [];
+let pcNosGlobais = { 1: false };
 
 // Variáveis de tempo
 let timerAssimilacao;
@@ -153,8 +158,12 @@ function falharAssimilacao() {
   // Perde a câmera
   if (camAssimilada && !camerasMortas.includes(camAssimilada)) {
     camerasMortas.push(camAssimilada);
-    // Salva no armazenamento local
-    localStorage.setItem('agent_cameras_mortas', JSON.stringify(camerasMortas));
+    // Salva no armazenamento no Supabase
+    try {
+      supabase.from('game_state').update({ agent_cameras_mortas: camerasMortas }).eq('id', 1).then();
+    } catch(e) {
+      console.error(e);
+    }
   }
   
   if (camerasMortas.length >= 4) {
@@ -207,26 +216,68 @@ camBtns.forEach(btn => {
 });
 
 const checkCamerasUnlocked = () => {
-  try {
-    const pcNosStr = localStorage.getItem('pcNosRestaurados');
-    if (pcNosStr) {
-      const pcNos = JSON.parse(pcNosStr);
-      return !!pcNos[1];
-    }
-  } catch (e) {
-    console.error(e);
-  }
-  return false;
+  return !!pcNosGlobais[1];
 };
 
-window.addEventListener('storage', (e) => {
-  if (e.key === 'pcNosRestaurados') {
-    location.reload();
-  }
-});
-
 // Inicia no carregamento
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
+  try {
+    const { data, error } = await supabase.from('game_state').select('*').eq('id', 1).single();
+    if (data) {
+      if (data.agent_cameras_mortas) {
+        camerasMortas = data.agent_cameras_mortas || [];
+      }
+      if (data.pc_nos_restaurados) {
+        pcNosGlobais = data.pc_nos_restaurados || { 1: false };
+      }
+    }
+  } catch(e) {
+    console.error(e);
+  }
+
+  // Verifica se o mestre mandou resetar
+  const urlParamsLoad = new URLSearchParams(window.location.search);
+  if (urlParamsLoad.has('resetar')) {
+    camerasMortas = [];
+    try {
+      await supabase.from('game_state').update({ agent_cameras_mortas: [] }).eq('id', 1);
+    } catch(e) {
+      console.error(e);
+    }
+    alert("O SISTEMA FOI RESETADO COM SUCESSO!");
+    // Limpa a URL para não ficar resetando toda hora que atualizar
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  // Inscreve para ouvir mudanças
+  supabase
+    .channel('game_state_changes_mobile')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_state', filter: 'id=eq.1' }, payload => {
+      const newData = payload.new;
+      if (newData.agent_cameras_mortas) {
+        camerasMortas = newData.agent_cameras_mortas || [];
+        renderizarCamera();
+        if (camerasMortas.length >= 4) {
+          btnPurgar.classList.add('hidden');
+          failureScreen.classList.remove('hidden');
+        } else if (!failureScreen.classList.contains('hidden')) {
+           // Resetou e tava na tela de falha
+           failureScreen.classList.add('hidden');
+           iniciarCiclo();
+        }
+      }
+      if (newData.pc_nos_restaurados) {
+        const checkAntes = checkCamerasUnlocked();
+        pcNosGlobais = newData.pc_nos_restaurados;
+        if (!checkAntes && checkCamerasUnlocked()) {
+          location.reload(); // Recarrega se acabou de desbloquear
+        } else if (checkAntes && !checkCamerasUnlocked()) {
+          location.reload(); // Recarrega se foi bloqueado
+        }
+      }
+    })
+    .subscribe();
+
   if (!checkCamerasUnlocked()) {
     connStatus.innerText = 'OFFLINE';
     systemStatus.innerHTML = `
@@ -240,16 +291,6 @@ window.addEventListener('load', () => {
       btn.style.pointerEvents = 'none';
     });
     return;
-  }
-
-  // Verifica se o mestre mandou resetar
-  const urlParamsLoad = new URLSearchParams(window.location.search);
-  if (urlParamsLoad.has('resetar')) {
-    localStorage.removeItem('agent_cameras_mortas');
-    camerasMortas = [];
-    alert("O SISTEMA FOI RESETADO COM SUCESSO!");
-    // Limpa a URL para não ficar resetando toda hora que atualizar
-    window.history.replaceState({}, document.title, window.location.pathname);
   }
 
   renderizarCamera();

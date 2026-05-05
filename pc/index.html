@@ -69,6 +69,7 @@
         pointer-events: none;
       }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
     <div id="terminal"></div>
@@ -83,14 +84,27 @@
       const idInput = document.getElementById("id-input");
       const promptText = document.getElementById("prompt-text");
 
+      const supabaseUrl = 'https://yedmpjcllgnluyrbletf.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllZG1wamNsbGdubHV5cmJpZXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5ODYxMjksImV4cCI6MjA5MzU2MjEyOX0.EigaV6Q-2RJUS0zbSCu-A88ZW6f3Qg5LR5n5Tgu_2Bg';
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
       let estadoAtual = "LOGIN"; 
 
       // Armazenamento de estado dos nós
-      let nosRestaurados = JSON.parse(localStorage.getItem('pcNosRestaurados')) || {
+      let nosRestaurados = {
         1: false,
         2: false,
         3: false
       };
+
+      async function fetchState() {
+        try {
+          const { data, error } = await supabase.from('game_state').select('pc_nos_restaurados').eq('id', 1).single();
+          if (data && data.pc_nos_restaurados) {
+            nosRestaurados = data.pc_nos_restaurados;
+          }
+        } catch(e) { console.error(e); }
+      }
 
       const senhasNos = {
         1: "ALPHA77",
@@ -114,6 +128,7 @@
       }
 
       async function initTerminal() {
+        await fetchState();
         await typeText("PANACEIA OS v4.2.1 [MODO DE SEGURANÇA MÁXIMA]\n", 20);
         await sleep(400);
         await typeText("CARREGANDO MÓDULOS DE CONTENÇÃO... [OK]\n", 20);
@@ -231,7 +246,9 @@ ${nosRestaurados[1] ? '>>> MÓDULO [CAMERAS] DESBLOQUEADO.\n' : ''}${nosRestaura
                     await typeText(`[SINAL RECUPERADO]\n`, 20);
                     
                     nosRestaurados[no] = true;
-                    localStorage.setItem('pcNosRestaurados', JSON.stringify(nosRestaurados));
+                    try {
+                      await supabase.from('game_state').update({ pc_nos_restaurados: nosRestaurados }).eq('id', 1);
+                    } catch(e) { console.error(e); }
                     
                     if (no === 1) await typeText(`\n>>> NOVO MÓDULO DETECTADO: [CAMERAS]\n>>> ACESSO ÀS CÂMERAS DA ILHA LIBERADO.\n\n`, 20);
                     if (no === 2) await typeText(`\n>>> NOVO MÓDULO DETECTADO: [DEFESA]\n>>> SISTEMA DE CONTROLE AMBIENTAL LIBERADO.\n\n`, 20);
