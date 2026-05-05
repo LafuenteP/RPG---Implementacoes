@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mestre.OS - God Mode</title>
+    <!-- Fontes do Google (Retro Terminal) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .mestre-dashboard {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .panel-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .btn-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 15px;
+        font-size: 1.2rem;
+      }
+      .btn-toggle.active {
+        background-color: rgba(51, 255, 0, 0.2);
+        border-color: #33ff00;
+        color: #33ff00;
+      }
+      .btn-toggle.inactive {
+        background-color: rgba(255, 0, 0, 0.1);
+        border-color: #ff3333;
+        color: #ff3333;
+      }
+      .status-badge {
+        font-size: 0.9rem;
+        padding: 2px 6px;
+        border: 1px solid currentColor;
+      }
+      .danger-zone {
+        border-color: #ff3333;
+      }
+      .danger-zone h2 {
+        color: #ff3333;
+      }
+      .btn-danger {
+        border-color: #ff3333;
+        color: #ff3333;
+        width: 100%;
+        padding: 15px;
+        font-size: 1.2rem;
+      }
+      .btn-danger:hover {
+        background: #ff3333;
+        color: #000;
+        box-shadow: 0 0 10px #ff3333;
+      }
+
+      /* Relógios de Progresso */
+      .clock-wrapper {
+        text-align: center;
+        border: 1px dashed #33ff00;
+        padding: 10px;
+        position: relative;
+      }
+      .clock {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: conic-gradient(rgba(255,51,51,0.8) 0%, transparent 0%);
+        border: 2px solid #33ff00;
+        margin: 0 auto 10px auto;
+        cursor: pointer;
+        position: relative;
+      }
+      .clock-lines {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+      .clock-lines div {
+        position: absolute;
+        top: 0; left: 50%;
+        width: 1px; height: 100%;
+        background: #33ff00;
+      }
+      .clock-name {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #33ff00;
+      }
+      .btn-del-clock {
+        position: absolute;
+        top: 5px; right: 5px;
+        background: transparent;
+        color: #ff3333;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crt-curve"></div>
+    <div class="scanlines"></div>
+    <div class="crt-flicker"></div>
+
+    <div class="app-container">
+      <header class="top-bar">
+        <div class="logo">
+          <i class="ph ph-crown"></i>
+          <h1>[MESTRE.OS - OVERRIDE SYSTEM]</h1>
+        </div>
+      </header>
+
+      <main class="mestre-dashboard">
+        <div class="panel-grid">
+          
+          <!-- Controle dos Nós -->
+          <section class="card">
+            <h2>> OVERRIDE_NOS.BAT_</h2>
+            <p class="subtitle">// LIBERAR ACESSO NO TERMINAL DOS PLAYERS</p>
+            <div id="nodes-container">
+              <button class="btn btn-toggle" data-node="1">
+                <span>NÓ 01 [CÂMERAS]</span>
+                <span class="status-badge" id="badge-node-1">OFFLINE</span>
+              </button>
+              <button class="btn btn-toggle" data-node="2">
+                <span>NÓ 02 [DEFESA]</span>
+                <span class="status-badge" id="badge-node-2">OFFLINE</span>
+              </button>
+              <button class="btn btn-toggle" data-node="3">
+                <span>NÓ 03 [CONFIDENCIAL]</span>
+                <span class="status-badge" id="badge-node-3">OFFLINE</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Controle das Câmeras -->
+          <section class="card">
+            <h2>> OVERRIDE_CAMERAS.BAT_</h2>
+            <p class="subtitle">// FORÇAR ASSIMILAÇÃO OU RESTAURAR SINAL</p>
+            <div id="cameras-container">
+              <button class="btn btn-toggle" data-cam="1">
+                <span>CAM_01 [ACAMPAMENTO]</span>
+                <span class="status-badge" id="badge-cam-1">ONLINE</span>
+              </button>
+              <button class="btn btn-toggle" data-cam="2">
+                <span>CAM_02 [PRAIA]</span>
+                <span class="status-badge" id="badge-cam-2">ONLINE</span>
+              </button>
+              <button class="btn btn-toggle" data-cam="3">
+                <span>CAM_03 [RUÍNAS]</span>
+                <span class="status-badge" id="badge-cam-3">ONLINE</span>
+              </button>
+              <button class="btn btn-toggle" data-cam="4">
+                <span>CAM_04 [FLORESTA]</span>
+                <span class="status-badge" id="badge-cam-4">ONLINE</span>
+              </button>
+            </div>
+            <p style="margin-top: 10px; font-size: 0.9rem; color: #888;">
+              > Clique para inverter o status da câmera.
+            </p>
+          </section>
+
+        </div>
+
+        <!-- Sorteador de Eventos -->
+        <section class="card">
+          <h2>> SCRIPT_EVENTOS.SH_</h2>
+          <div class="panel-grid">
+            <div>
+              <h3>Eventos Acampamento</h3>
+              <button class="btn btn-primary" id="btn-roll-camp" style="width: 100%; margin-bottom: 10px;">[ ROLAR 1d20 ]</button>
+            </div>
+            <div>
+              <h3>Eventos de Trilha</h3>
+              <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <select id="mod-trilha" style="flex: 1; background: #111; color: #33ff00; border: 1px solid #33ff00; padding: 5px; font-family: inherit;">
+                  <option value="-5">Falha Desastrosa (-5)</option>
+                  <option value="-2">Falha Normal (-2)</option>
+                  <option value="0" selected>Sucesso Normal (0)</option>
+                  <option value="5">Sucesso Extremo (+5)</option>
+                </select>
+                <button class="btn btn-primary" id="btn-roll-trail" style="flex: 1;">[ ROLAR 1d20 + MOD ]</button>
+              </div>
+            </div>
+          </div>
+          <div id="event-result" style="margin-top: 15px; padding: 15px; border: 1px dashed #33ff00; display: none;">
+            <h3 id="event-title" style="margin-top: 0; color: #ffeb3b;">-</h3>
+            <p id="event-desc" style="margin-bottom: 0;">-</p>
+          </div>
+        </section>
+
+        <div class="panel-grid">
+          <!-- Gerador de NPCs -->
+          <section class="card">
+            <h2>> GERADOR_DE_IDENTIDADE.BAT_</h2>
+            <button class="btn btn-primary" id="btn-gen-npc" style="width: 100%; margin-bottom: 15px;">[ GERAR NPC RÁPIDO ]</button>
+            <div id="npc-result" style="padding: 10px; border: 1px dashed #33ff00; display: none;">
+              <h3 id="npc-name" style="margin: 0 0 5px 0; color: #00bcd4;">-</h3>
+              <p id="npc-job" style="margin: 0 0 5px 0;">-</p>
+              <p id="npc-trait" style="margin: 0; color: #ffeb3b;">-</p>
+            </div>
+          </section>
+
+          <!-- Relógios de Progresso -->
+          <section class="card">
+            <h2>> ROOT/PROGRESSO.SYS_</h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+              <input type="text" id="clock-name" placeholder="Nome da Ameaça" style="flex: 2; padding: 5px; font-family: inherit; background: transparent; border: 1px solid #33ff00; color: #33ff00;" />
+              <select id="clock-segments" style="flex: 1; background: #111; color: #33ff00; border: 1px solid #33ff00; padding: 5px; font-family: inherit;">
+                <option value="4">4 Fatias</option>
+                <option value="6">6 Fatias</option>
+                <option value="8">8 Fatias</option>
+              </select>
+              <button class="btn btn-primary" id="btn-add-clock" style="flex: 1;">[ + ]</button>
+            </div>
+            <div id="clocks-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <!-- Relógios gerados dinamicamente -->
+            </div>
+          </section>
+        </div>
+
+        <!-- Danger Zone -->
+        <section class="card danger-zone">
+          <h2>> ROOT/DANGER_ZONE.EXE_</h2>
+          <button class="btn btn-danger" id="btn-reset-all">
+            <i class="ph ph-warning"></i> RESETAR CAMPANHA (BLOQUEAR TUDO)
+          </button>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Container de Toasts (opcional, aproveita o estilo do CSS principal) -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="mestre.js"></script>
+  </body>
+</html>
