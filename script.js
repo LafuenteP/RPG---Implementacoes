@@ -76,6 +76,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return !!pcNosGlobais[1];
   };
 
+  const atualizarAcoesEspeciais = () => {
+    const acaoSintetizador = document.getElementById("acao-sintetizador");
+    if (acaoSintetizador) {
+      acaoSintetizador.style.display = pcNosGlobais[3] ? "flex" : "none";
+    }
+  };
+
   // --- PERSISTÊNCIA DE DADOS COM SUPABASE ---
   const saveState = async () => {
     const state = {
@@ -133,10 +140,12 @@ document.addEventListener("DOMContentLoaded", () => {
       atualizarNiveis();
       calcularCustoDiario();
       checkCamerasUnlocked();
+      atualizarAcoesEspeciais();
     } catch(e) {
       console.error(e);
       displayDia.textContent = diaAtual;
       checkCamerasUnlocked();
+      atualizarAcoesEspeciais();
     }
   };
 
@@ -169,6 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (newData.pc_nos_restaurados) {
         pcNosGlobais = newData.pc_nos_restaurados;
         checkCamerasUnlocked();
+        atualizarAcoesEspeciais();
       }
 
       if (newData.agent_cameras_mortas) {
