@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>SYS_BOOT::V-04</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            margin: 0;
+            overflow: hidden;
+        }
+        #boot-screen {
+            font-size: 1.2rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        .error-text {
+            color: #ff0000;
+            font-weight: bold;
+        }
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2rem;
+            background-color: #00ff00;
+            animation: blink 1s step-end infinite;
+            vertical-align: bottom;
+            margin-left: 5px;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        /* 
+           O SEGREDO ESTÁ NO ARCANO.
+           O MESTRE SABE QUE VOCÊS SABEM OLHAR O CÓDIGO.
+        */
+    </style>
+
+    <!-- 
+    ================================================================================
+                      :::!~!!!!!:.
+                  .xUHWH!! !!?M88WHX:.
+                .X*#M@$!!  !X!M$$$$$$WWx:.
+               :!!!!!!?H! :!$!$$$$$$$$$$8X:
+              !!~  ~:~!! :~!$!#$$$$$$$$$$8X:
+             :!~::!H!<   ~.U$X!?R$$$$$$$$MM!
+             ~!~!!!!~~ .:XW$$$U!!?$$$$$$RMM!
+               !:~~~ .:!M"T#$$$$WX??#MRRMMM!
+               ~?WuxiW*`   `"#$$$$8!!!!??!!!
+             :X- M$$$$       `"T#$T~!8$WUXU~
+            :%`  ~#$$$m:        ~!~ ?$$$$$$
+          :!`.-   ~T$$$$8xx.  .xWW- ~""##*"
+.....   -~~:<` !    ~?T#$$@@W@*?$$      /`
+W$@@M!!! .!~~ !!     .:XUW$W!~ `"~:    :
+#"~~`.:x%`!!  !H:   !WM$$$$Ti.: .!WUn+!`
+:::~:!!`:X~ .: ?H.!u "$$$B$$$!W:U!T$$M~
+.~~   :X@!.-~   ?@WTWo("*$$$W$TH$! `
+Wi.~!X$?!-~    : ?$$$B$Wu("**$RM!
+$R@i.~~ !     :   ~$$$$$B$$en:``
+?MXT@Wx.~    :     ~"##*$$$$M~
+
+    [ SISTEMA DE CONTENÇÃO V-04 ]
+    [ MÓDULO DE INTERFACE GRÁFICA CORROMPIDO IRREVERSIVELMENTE ]
+    
+    O sinal de telemetria continua sendo transmitido, mas não pode ser 
+    renderizado localmente devido aos danos na estrutura do arquivo.
+    
+    O sinal de emergência foi desviado para o nó externo.
+    
+    ================================================================================
+    >>> DECODIFIQUE PARA ACESSAR A TELEMETRIA [PROTOCOLO B-64] <<<
+    
+    aHR0cHM6Ly9ycGctaW1wbGVtZW50YWNvZXMudmVyY2VsLmFwcC9wdXp6bGUtdjA0L3Qtb3ZlcnJpZGUtdjA0Lmh0bWw=
+    
+    ================================================================================
+    -->
+</head>
+<body>
+    <div id="boot-screen"></div>
+
+    <script>
+        // O jogador curioso também vai achar coisas no F12 (DevTools)
+        console.log("%c[ ERRO DO SISTEMA V-04 ]", "color: red; font-size: 24px; font-weight: bold;");
+        console.log("%cA interface gráfica queimou. Mas se você está lendo isso, você sabe investigar.", "color: green; font-size: 16px;");
+        console.log("%cUse um conversor Base64 para descriptografar o link no código fonte HTML.", "color: yellow; font-size: 14px;");
+
+        const bootSequence = [
+            "INICIALIZANDO MÓDULOS DO NÚCLEO PANACEIA...",
+            "CARREGANDO BANCOS DE MEMÓRIA.......... [OK]",
+            "MONTANDO SISTEMA DE ARQUIVOS.......... [OK]",
+            "VERIFICANDO SENSOR DE TELEMETRIA V-04. [OK]",
+            "ESTABELECENDO LINK DE REDE PANACEIA... [OK]",
+            "CARREGANDO RENDERIZADOR GRÁFICO....... ",
+            "<span class='error-text'>[ERRO FATAL] MÓDULO GUI CORROMPIDO.</span>",
+            "<span class='error-text'>[ERRO FATAL] INCOMPATIBILIDADE DE CHECKSUM EM 0x00F8A9.</span>",
+            "TENTANDO REINICIAR O RENDERIZADOR.",
+            ".",
+            "..",
+            "...",
+            "<span class='error-text'>[!] RENDERIZADOR DESTRUÍDO. SISTEMA INTERROMPIDO.</span>",
+            "<br>",
+            "PROTOCOLO DE CONTINGÊNCIA PANACEIA ATIVADO.",
+            "TRANSMITINDO SINAL DE TELEMETRIA PARA GATEWAY EXTERNO.",
+            "AGUARDANDO ROTEAMENTO MANUAL..."
+        ];
+
+        const screen = document.getElementById('boot-screen');
+        let index = 0;
+
+        function addLine() {
+            if (index < bootSequence.length) {
+                screen.innerHTML = screen.innerHTML.replace('<div class="cursor"></div>', '');
+                screen.innerHTML += bootSequence[index] + "<br>";
+                screen.innerHTML += '<div class="cursor"></div>';
+                index++;
+                
+                let delay = Math.random() * 500 + 100;
+                if(bootSequence[index-1] === "." || bootSequence[index-1] === ".." || bootSequence[index-1] === "...") {
+                    delay = 1000;
+                }
+                setTimeout(addLine, delay);
+            }
+        }
+
+        // Inicia o texto de boot automaticamente
+        setTimeout(addLine, 1000);
+    </script>
+</body>
+</html>

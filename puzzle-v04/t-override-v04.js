@@ -11,7 +11,33 @@ const puzzleChannel = supabaseClient.channel('puzzle_room', {
 let isStable = false;
 let isDead = false;
 
+// Senha do Morse (O Mestre pode alterar aqui)
+const MORSE_PASSWORD = "SOS"; 
+let isAuthenticated = false;
+
 document.addEventListener("DOMContentLoaded", () => {
+    const passwordOverlay = document.getElementById("password-overlay");
+    const passwordInput = document.getElementById("password-input");
+    const passwordBtn = document.getElementById("password-btn");
+    const passwordError = document.getElementById("password-error");
+
+    // Lógica da Senha
+    const checkPassword = () => {
+        const val = passwordInput.value.trim().toUpperCase();
+        if (val === MORSE_PASSWORD) {
+            isAuthenticated = true;
+            passwordOverlay.style.display = 'none';
+        } else {
+            passwordError.style.display = 'block';
+            passwordInput.value = "";
+            setTimeout(() => passwordError.style.display = 'none', 3000);
+        }
+    };
+
+    passwordBtn.addEventListener("click", checkPassword);
+    passwordInput.addEventListener("keypress", (e) => {
+        if (e.key === 'Enter') checkPassword();
+    });
     const o2Val = document.getElementById("o2-val");
     const nVal = document.getElementById("n-val");
     const co2Val = document.getElementById("co2-val");
