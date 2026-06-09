@@ -93,6 +93,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    puzzleChannel.on('broadcast', { event: 'reset_puzzle' }, () => {
+        isStable = false;
+        isDead = false;
+        statusText.textContent = "MISTURA INSTÁVEL";
+        statusText.className = "text-warning";
+        successMessage.classList.add("hidden");
+        deathScreen.classList.add("hidden");
+        successMessage.innerHTML = `<h2 class="blink-fast">> MISTURA ESTÁVEL.</h2><h1>CÓDIGO DE PURGA: <span class="highlight">3 - 6 - 0</span></h1><p>// INSTRUÇÕES: INSERIR FORMAS GEOMÉTRICAS CORRESPONDENTES AO NÚMERO DE LADOS.</p>`;
+    });
+
     puzzleChannel.subscribe((status) => {
         if (status === 'SUBSCRIBED') {
             console.log("Conectado ao painel do Sávio!");

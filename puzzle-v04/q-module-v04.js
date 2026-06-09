@@ -136,6 +136,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (payload.payload.status === 'death' && !isGameOver) {
             triggerDeath();
         }
+    }).on('broadcast', { event: 'reset_puzzle' }, () => {
+        isGameOver = false;
+        timeLeft = 480;
+        currentSequence = [];
+        statusOverlay.className = 'hidden';
+        statusMessage.textContent = "";
+        clearInterval(timerInterval);
+        sliders[0].value = 50;
+        sliders[1].value = 50;
+        sliders[2].value = 50;
+        document.body.style.backgroundColor = "var(--dark-red)";
+        broadcastSliders();
+        startTimer();
     }).subscribe((status) => {
         if (status === 'SUBSCRIBED') {
             console.log("Conectado ao painel do Grupo!");
