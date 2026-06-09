@@ -1,0 +1,139 @@
+:root {
+    --term-green: #00ff00;
+    --term-dark: #002200;
+    --term-bg: #050505;
+    --term-font: 'VT323', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--term-bg);
+    color: var(--term-green);
+    font-family: var(--term-font);
+    font-size: 1.5rem;
+    height: 100vh;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.terminal-container {
+    width: 100%;
+    max-width: 800px;
+    border: 2px solid var(--term-dark);
+    padding: 30px;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+}
+
+header {
+    margin-bottom: 40px;
+    border-bottom: 1px dashed var(--term-green);
+    padding-bottom: 20px;
+}
+
+header p {
+    margin: 10px 0;
+}
+
+.text-warning {
+    color: #ffaa00;
+}
+
+.text-success {
+    color: var(--term-green);
+}
+
+/* Medidores */
+.meters {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.meter-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.meter-label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.meter-bar-container {
+    width: 100%;
+    height: 20px;
+    background-color: var(--term-dark);
+    border: 1px solid var(--term-green);
+    display: none; /* Escondido, usando o ascii por estilo retro */
+}
+
+.meter-bar {
+    height: 100%;
+    background-color: var(--term-green);
+    transition: width 0.3s ease;
+}
+
+.meter-ascii {
+    letter-spacing: 2px;
+    white-space: pre;
+}
+
+/* Sucesso */
+#success-message {
+    margin-top: 50px;
+    padding: 20px;
+    border: 2px solid var(--term-green);
+    background-color: rgba(0, 255, 0, 0.1);
+    text-align: center;
+}
+
+#success-message h1 {
+    font-size: 3rem;
+    margin: 20px 0;
+}
+
+.highlight {
+    background-color: var(--term-green);
+    color: var(--term-bg);
+    padding: 0 10px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.blink-fast {
+    animation: blink 0.5s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Tela de Morte */
+#death-screen {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #000;
+    color: #ff0000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#death-screen h1 {
+    font-size: 5rem;
+    animation: blink 1s infinite;
+}

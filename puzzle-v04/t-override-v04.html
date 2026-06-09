@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TELEMETRIA V-04</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="t-override-v04.css">
+</head>
+<body>
+    <div class="terminal-container">
+        <header>
+            <p>> INTERCEPTAÇÃO DE SINAL: MÓDULO DE SUPORTE DE VIDA V-04.</p>
+            <p>> STATUS: <span id="status-text" class="text-warning">MISTURA INSTÁVEL</span></p>
+        </header>
+
+        <main class="meters">
+            <!-- Medidor O2 -->
+            <div class="meter-row">
+                <div class="meter-label">
+                    <span>O2 (Meta: 75%)</span>
+                    <span id="o2-val">0%</span>
+                </div>
+                <div class="meter-bar-container">
+                    <div id="o2-bar" class="meter-bar"></div>
+                </div>
+                <div class="meter-ascii" id="o2-ascii">[ ░░░░░░░░░░░░░░░░░░░░ ]</div>
+            </div>
+
+            <!-- Medidor N -->
+            <div class="meter-row">
+                <div class="meter-label">
+                    <span>N  (Meta: 20%)</span>
+                    <span id="n-val">0%</span>
+                </div>
+                <div class="meter-bar-container">
+                    <div id="n-bar" class="meter-bar"></div>
+                </div>
+                <div class="meter-ascii" id="n-ascii">[ ░░░░░░░░░░░░░░░░░░░░ ]</div>
+            </div>
+
+            <!-- Medidor CO2 -->
+            <div class="meter-row">
+                <div class="meter-label">
+                    <span>CO2 (Meta: 5%)</span>
+                    <span id="co2-val">0%</span>
+                </div>
+                <div class="meter-bar-container">
+                    <div id="co2-bar" class="meter-bar"></div>
+                </div>
+                <div class="meter-ascii" id="co2-ascii">[ ░░░░░░░░░░░░░░░░░░░░ ]</div>
+            </div>
+        </main>
+
+        <footer id="success-message" class="hidden">
+            <h2 class="blink-fast">> MISTURA ESTÁVEL.</h2>
+            <h1>CÓDIGO DE PURGA: <span class="highlight">3 - 6 - 0</span></h1>
+            <p>// INSTRUÇÕES: INSERIR FORMAS GEOMÉTRICAS CORRESPONDENTES AO NÚMERO DE LADOS.</p>
+        </footer>
+    </div>
+
+    <!-- Tela de Falha caso o Sávio morra -->
+    <div id="death-screen" class="hidden">
+        <h1>SINAL PERDIDO.</h1>
+        <p>SISTEMA V-04 INATIVO.</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="t-override-v04.js"></script>
+</body>
+</html>

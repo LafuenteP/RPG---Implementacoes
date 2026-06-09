@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL V-04 [QUARENTENA]</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="q-module-v04.css">
+</head>
+<body>
+    <div class="crt-overlay"></div>
+    <div class="scanlines"></div>
+    
+    <div class="container">
+        <header class="danger-header blink">
+            <i class="ph-fill ph-warning"></i>
+            <h1>QUARENTENA ATIVA. NÍVEL DE OXIGÊNIO CRÍTICO.</h1>
+            <div class="timer" id="timer">08:00</div>
+        </header>
+
+        <main class="sliders-container">
+            <div class="slider-wrapper">
+                <input type="range" id="slider-1" class="vertical-slider" min="0" max="100" value="50" orient="vertical">
+            </div>
+            <div class="slider-wrapper">
+                <input type="range" id="slider-2" class="vertical-slider" min="0" max="100" value="50" orient="vertical">
+            </div>
+            <div class="slider-wrapper">
+                <input type="range" id="slider-3" class="vertical-slider" min="0" max="100" value="50" orient="vertical">
+            </div>
+        </main>
+
+        <footer class="shapes-container">
+            <button class="shape-btn" data-shape="3" id="btn-triangle">
+                <svg viewBox="0 0 100 100"><polygon points="50,15 90,85 10,85" fill="none" stroke="currentColor" stroke-width="8"/></svg>
+            </button>
+            <button class="shape-btn" data-shape="6" id="btn-hexagon">
+                <svg viewBox="0 0 100 100"><polygon points="50,10 85,30 85,70 50,90 15,70 15,30" fill="none" stroke="currentColor" stroke-width="8"/></svg>
+            </button>
+            <button class="shape-btn" data-shape="0" id="btn-circle">
+                <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="8"/></svg>
+            </button>
+        </footer>
+    </div>
+
+    <!-- Overlay de Status (Morte ou Sucesso) -->
+    <div id="status-overlay" class="hidden">
+        <h1 id="status-message"></h1>
+    </div>
+
+    <!-- Supabase e Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="q-module-v04.js"></script>
+</body>
+</html>
